@@ -1,1 +1,0 @@
-snakebot_env
