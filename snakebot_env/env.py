@@ -55,6 +55,7 @@ class SnakebotEnv(ParallelEnv):
         league_level: int = 4,
         render_mode: Optional[str] = None,
         seed: Optional[int] = None,
+        apple_density: Optional[float] = None,
     ):
         super().__init__()
         assert num_players == 2, "Currently only 2-player mode is supported."
@@ -63,6 +64,7 @@ class SnakebotEnv(ParallelEnv):
         self.league_level = league_level
         self.render_mode = render_mode
         self._seed = seed
+        self._apple_density = apple_density
 
         # Stable list of all possible agents across an episode
         self.possible_agents = [
@@ -103,7 +105,10 @@ class SnakebotEnv(ParallelEnv):
         rng = stdlib_random.Random(seed if seed is not None else self._seed)
 
         # Generate grid
-        grid = GridMaker(rng=rng, league_level=self.league_level).make()
+        gm_kwargs = {"rng": rng, "league_level": self.league_level}
+        if self._apple_density is not None:
+            gm_kwargs["apple_density"] = self._apple_density
+        grid = GridMaker(**gm_kwargs).make()
 
         # Assign spawn locations to bots
         spawn_islands = grid.detect_spawn_islands()
