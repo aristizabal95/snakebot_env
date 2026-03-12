@@ -216,10 +216,10 @@ class SnakebotEnv(ParallelEnv):
 
         # Channel 0: map
         for wx, wy in grid.walls:
-            if wy < MAX_HEIGHT and wx < MAX_WIDTH:
+            if 0 <= wy < MAX_HEIGHT and 0 <= wx < MAX_WIDTH:
                 obs[0, wy, wx] = 1.0
         for ax, ay in grid.apples:
-            if ay < MAX_HEIGHT and ax < MAX_WIDTH:
+            if 0 <= ay < MAX_HEIGHT and 0 <= ax < MAX_WIDTH:
                 obs[0, ay, ax] = -1.0
 
         bot = self._bot_by_agent.get(agent)
@@ -231,7 +231,7 @@ class SnakebotEnv(ParallelEnv):
 
         # Channel 1: self body
         for bx, by in bot.body:
-            if by < MAX_HEIGHT and bx < MAX_WIDTH:
+            if 0 <= by < MAX_HEIGHT and 0 <= bx < MAX_WIDTH:
                 obs[1, by, bx] = 1.0
 
         # Channel 2: others (ally=+1, enemy=-1)
@@ -240,7 +240,7 @@ class SnakebotEnv(ParallelEnv):
                 continue
             value = 1.0 if other_bot.owner == my_player else -1.0
             for bx, by in other_bot.body:
-                if by < MAX_HEIGHT and bx < MAX_WIDTH:
+                if 0 <= by < MAX_HEIGHT and 0 <= bx < MAX_WIDTH:
                     obs[2, by, bx] = value
 
         return obs

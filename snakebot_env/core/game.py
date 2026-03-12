@@ -130,6 +130,7 @@ class GameState:
         for bot in self.live_bots():
             hx, hy = bot.head
             in_wall = self.grid.is_wall(hx, hy)
+            in_oob = not self.grid.in_bounds(hx, hy)
 
             in_body = False
             for other in self.live_bots():
@@ -143,7 +144,7 @@ class GameState:
                         in_body = True
                         break
 
-            if in_wall or in_body:
+            if in_wall or in_oob or in_body:
                 to_behead.append(bot)
 
         penalties: dict[int, float] = {}
