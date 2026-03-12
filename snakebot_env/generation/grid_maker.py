@@ -18,14 +18,24 @@ SPAWN_HEIGHT = 3
 DESIRED_SPAWNS = 4
 
 
+DEFAULT_APPLE_DENSITY = 0.025
+
+
 class GridMaker:
-    def __init__(self, rng: Optional[stdlib_random.Random] = None, league_level: int = 4):
+    def __init__(
+        self,
+        rng: Optional[stdlib_random.Random] = None,
+        league_level: int = 4,
+        apple_density: float = DEFAULT_APPLE_DENSITY,
+    ):
         """
         league_level: 1=bronze(easy), 2=silver, 3=gold, 4=legend(hard)
         Higher league → smaller grids (more wall density near top).
+        apple_density: probability of spawning an apple on each free cell.
         """
         self.rng = rng or stdlib_random.Random()
         self.league_level = league_level
+        self.apple_density = apple_density
         self.grid: Grid = None  # type: ignore
 
     def make(self) -> Grid:
@@ -127,7 +137,7 @@ class GridMaker:
         # --- Spawn apples randomly (left half + mirror) ---------------
         for y in range(height):
             for x in range(width // 2):
-                if not self.grid.is_wall(x, y) and self.rng.random() < 0.025:
+                if not self.grid.is_wall(x, y) and self.rng.random() < self.apple_density:
                     self.grid.apples.add((x, y))
                     self.grid.apples.add(self.grid.opposite(x, y))
 
