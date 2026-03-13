@@ -121,6 +121,10 @@ class GameState:
         """
         Resolve head-into-wall or head-into-body collisions.
         Returns {bot_id: penalty} for any bot that was beheaded or killed.
+
+        Out-of-bounds heads are NOT treated as walls (matches Java: grid.get()
+        returns NO_TILE with type -1, not TYPE_WALL). OOB snakes survive
+        beheading and are killed later by gravity via _do_falls().
         """
         all_bodies: dict[int, set[Coord]] = {
             b.id: set(b.body) for b in self.live_bots()
@@ -130,7 +134,6 @@ class GameState:
         for bot in self.live_bots():
             hx, hy = bot.head
             in_wall = self.grid.is_wall(hx, hy)
-            in_oob = not self.grid.in_bounds(hx, hy)
 
             in_body = False
             for other in self.live_bots():
@@ -144,7 +147,7 @@ class GameState:
                         in_body = True
                         break
 
-            if in_wall or in_oob or in_body:
+            if in_wall or in_body:
                 to_behead.append(bot)
 
         penalties: dict[int, float] = {}
@@ -176,8 +179,8 @@ class GameState:
                 if can_fall:
                     bot.body = deque((x, y + 1) for x, y in bot.body)
                     something_fell = True
-                    # Kill if entirely out of bounds
-                    if all(y >= self.grid.height for _, y in bot.body):
+                    # Kill if entirely out of bounds (matches Java: y >= height + 1)
+                    if all(y >= self.grid.height + 1 for _, y in bot.body):
                         bot.alive = False
 
             # Inter-coiled group falls

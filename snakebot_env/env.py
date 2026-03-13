@@ -177,7 +177,18 @@ class SnakebotEnv(ParallelEnv):
                 if bot.alive:
                     bot_actions[bot.id] = ACTION_TO_DIR[int(action_idx)]
 
-        step_result = self._game.step(bot_actions)
+        try:
+            step_result = self._game.step(bot_actions)
+        except IndexError:
+            # A snake body grew outside the array bounds (can happen during
+            # training when apple density is high). Treat as an immediate
+            # endgame: ignore the step and signal termination for all agents.
+            rewards = {a: 0.0 for a in self.agents}
+            terminated = {a: True for a in self.agents}
+            truncated = {a: False for a in self.agents}
+            infos = {a: {} for a in self.agents}
+            self.agents = []
+            return {}, rewards, terminated, truncated, infos
 
         # Compute per-apple reward for eaters (+1 per apple eaten)
         # We track apples before step to know who ate what
