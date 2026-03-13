@@ -10,3 +10,8 @@ dependencies = [
     "pettingzoo>=1.25.0",
     "pygame>=2.6.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
