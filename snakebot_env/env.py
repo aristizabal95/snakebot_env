@@ -5,7 +5,7 @@ Each snakebot is a separate agent. Agent IDs follow the format "p{player}_b{bot}
 
 Observation per agent: numpy array of shape (3, height, width), dtype float32
   Channel 0 (map):    0.0=empty, 1.0=wall, -1.0=apple
-  Channel 1 (self):   1.0=own body cell, 0.0=elsewhere
+  Channel 1 (self):   1.0=own body cell, -1.0=own head cell, 0.0=elsewhere
   Channel 2 (others): 1.0=ally body, -1.0=enemy body, 0.0=elsewhere
 
 Action per agent: Discrete(4) → 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT
@@ -245,10 +245,13 @@ class SnakebotEnv(ParallelEnv):
         my_player = bot.owner
         my_bot_id = bot.id
 
-        # Channel 1: self body
+        # Channel 1: self body (1.0) with head marked as -1.0
         for bx, by in bot.body:
             if 0 <= by < MAX_HEIGHT and 0 <= bx < MAX_WIDTH:
                 obs[1, by, bx] = 1.0
+        hx, hy = bot.head
+        if 0 <= hy < MAX_HEIGHT and 0 <= hx < MAX_WIDTH:
+            obs[1, hy, hx] = -1.0
 
         # Channel 2: others (ally=+1, enemy=-1)
         for other_bot in self._game.snakebots:

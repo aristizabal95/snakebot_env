@@ -112,7 +112,7 @@ Each agent receives a `Box(-1.0, 1.0, shape=(3, H, W))` array with 3 channels:
 | Channel | Contents |
 |---------|----------|
 | 0 — Map | `1.0` = wall, `-1.0` = apple, `0.0` = empty |
-| 1 — Self | `1.0` = own body, `0.0` = elsewhere |
+| 1 — Self | `1.0` = own body, `-1.0` = own head, `0.0` = elsewhere |
 | 2 — Others | `1.0` = ally body, `-1.0` = enemy body, `0.0` = elsewhere |
 
 Grid size varies by league level (up to 25×45 at legend level).
