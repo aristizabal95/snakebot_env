@@ -56,6 +56,7 @@ class SnakebotEnv(ParallelEnv):
         render_mode: Optional[str] = None,
         seed: Optional[int] = None,
         apple_density: Optional[float] = None,
+        max_steps: Optional[int] = None,
     ):
         super().__init__()
         assert num_players == 2, "Currently only 2-player mode is supported."
@@ -65,6 +66,7 @@ class SnakebotEnv(ParallelEnv):
         self.render_mode = render_mode
         self._seed = seed
         self._apple_density = apple_density
+        self._max_steps = max_steps
 
         # Stable list of all possible agents across an episode
         self.possible_agents = [
@@ -131,7 +133,10 @@ class SnakebotEnv(ParallelEnv):
                 bot_id += 1
                 bot_count += 1
 
-        self._game = GameState(grid=grid, snakebots=bots, turn=0)
+        gs_kwargs: dict = {"grid": grid, "snakebots": bots, "turn": 0}
+        if self._max_steps is not None:
+            gs_kwargs["max_turns"] = self._max_steps
+        self._game = GameState(**gs_kwargs)
 
         # Build agent → bot mapping
         self._bot_by_agent = {}

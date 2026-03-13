@@ -31,6 +31,7 @@ class GameState:
     grid: Grid
     snakebots: list[Snakebot]  # all bots from both players
     turn: int = 0
+    max_turns: int = MAX_TURNS
 
     # --- Helpers -------------------------------------------------------
 
@@ -252,7 +253,7 @@ class GameState:
         no_apples = len(self.grid.apples) == 0
         p0_dead = all(not b.alive for b in self.snakebots if b.owner == 0)
         p1_dead = all(not b.alive for b in self.snakebots if b.owner == 1)
-        return no_apples or p0_dead or p1_dead or self.turn >= MAX_TURNS
+        return no_apples or p0_dead or p1_dead or self.turn >= self.max_turns
 
     def scores(self) -> dict[int, int]:
         """Total body size of all live bots per player."""
