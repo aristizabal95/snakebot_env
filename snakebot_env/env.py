@@ -1,7 +1,16 @@
 """
 PettingZoo ParallelEnv implementation for the Snakebot game.
 
+This environment fully implements the PettingZoo Parallel API specification
+(https://pettingzoo.farama.org/api/parallel/).
+
 Each snakebot is a separate agent. Agent IDs follow the format "p{player}_b{bot}".
+
+API Compliance:
+  - Properties: agents, num_agents, possible_agents, max_num_agents,
+                observation_spaces, action_spaces
+  - Methods: reset(), step(), render(), close(), state(),
+             observation_space(agent), action_space(agent)
 
 Observation per agent: numpy array of shape (3, height, width), dtype float32
   Channel 0 (map):    0.0=empty, 1.0=wall, -1.0=apple
@@ -82,10 +91,35 @@ class SnakebotEnv(ParallelEnv):
         self._renderer = None
 
     # ------------------------------------------------------------------
+    # Properties (PettingZoo Parallel API)
+    # ------------------------------------------------------------------
+
+    @property
+    def num_agents(self) -> int:
+        """Number of currently active agents."""
+        return len(self.agents)
+
+    @property
+    def max_num_agents(self) -> int:
+        """Maximum number of possible agents."""
+        return len(self.possible_agents)
+
+    @property
+    def observation_spaces(self) -> dict[str, spaces.Space]:
+        """Observation space dict for all possible agents."""
+        return {agent: self.observation_space(agent) for agent in self.possible_agents}
+
+    @property
+    def action_spaces(self) -> dict[str, spaces.Space]:
+        """Action space dict for all possible agents."""
+        return {agent: self.action_space(agent) for agent in self.possible_agents}
+
+    # ------------------------------------------------------------------
     # Spaces
     # ------------------------------------------------------------------
 
     def observation_space(self, agent: str) -> spaces.Space:
+        """Observation space for a specific agent."""
         return spaces.Box(
             low=-1.0, high=1.0,
             shape=(3, MAX_HEIGHT, MAX_WIDTH),
@@ -93,6 +127,7 @@ class SnakebotEnv(ParallelEnv):
         )
 
     def action_space(self, agent: str) -> spaces.Space:
+        """Action space for a specific agent."""
         return spaces.Discrete(4)
 
     # ------------------------------------------------------------------
@@ -293,6 +328,54 @@ class SnakebotEnv(ParallelEnv):
         if self._renderer is not None:
             self._renderer.close()
             self._renderer = None
+
+    # ------------------------------------------------------------------
+    # State (PettingZoo Parallel API)
+    # ------------------------------------------------------------------
+
+    def state(self) -> np.ndarray:
+        """
+        Return a global state representation of the environment.
+
+        This returns a complete view of the game state as a numpy array
+        containing all information visible across the entire grid.
+
+        Returns:
+            numpy array of shape (num_channels, MAX_HEIGHT, MAX_WIDTH) where:
+            - Channel 0: walls (1.0) and apples (-1.0)
+            - Channel 1: player 0 bots (body=1.0, head=-1.0)
+            - Channel 2: player 1 bots (body=1.0, head=-1.0)
+        """
+        if self._game is None:
+            # Return empty state if game not initialized
+            return np.zeros((3, MAX_HEIGHT, MAX_WIDTH), dtype=np.float32)
+
+        state = np.zeros((3, MAX_HEIGHT, MAX_WIDTH), dtype=np.float32)
+        grid = self._game.grid
+
+        # Channel 0: walls and apples
+        for wx, wy in grid.walls:
+            if 0 <= wy < MAX_HEIGHT and 0 <= wx < MAX_WIDTH:
+                state[0, wy, wx] = 1.0
+        for ax, ay in grid.apples:
+            if 0 <= ay < MAX_HEIGHT and 0 <= ax < MAX_WIDTH:
+                state[0, ay, ax] = -1.0
+
+        # Channel 1: Player 0 bots
+        for bot in self._game.snakebots:
+            if not bot.alive:
+                continue
+            channel = 1 if bot.owner == 0 else 2
+            # Mark body
+            for bx, by in bot.body:
+                if 0 <= by < MAX_HEIGHT and 0 <= bx < MAX_WIDTH:
+                    state[channel, by, bx] = 1.0
+            # Mark head with distinctive value
+            hx, hy = bot.head
+            if 0 <= hy < MAX_HEIGHT and 0 <= hx < MAX_WIDTH:
+                state[channel, hy, hx] = -1.0
+
+        return state
 
 
 def _parse_agent_id(agent: str) -> tuple[int, int]:
