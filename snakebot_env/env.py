@@ -308,10 +308,17 @@ class SnakebotEnv(ParallelEnv):
         obs = np.zeros((NUM_OBS_CHANNELS, MAX_HEIGHT, MAX_WIDTH), dtype=np.float32)
         grid = self._game.grid
 
-        # Center the grid within the fixed-size observation array so that
-        # padding is symmetric on all sides regardless of grid dimensions.
-        row_off = (MAX_HEIGHT - grid.height) // 2
-        col_off = (MAX_WIDTH - grid.width) // 2
+        bot = self._bot_by_agent.get(agent)
+        if bot is None:
+            return obs
+
+        # Egocentric: center the observation window on the agent's head so that
+        # the head always appears at (MAX_HEIGHT // 2, MAX_WIDTH // 2).  All
+        # other entities (walls, apples, other snakes) are placed at positions
+        # relative to the head; cells outside the buffer bounds are clipped.
+        hx, hy = bot.head
+        row_off = MAX_HEIGHT // 2 - hy
+        col_off = MAX_WIDTH // 2 - hx
 
         def _row(y: int) -> int:
             return y + row_off
@@ -330,10 +337,6 @@ class SnakebotEnv(ParallelEnv):
         for ax, ay in grid.apples:
             if _in_bounds(ax, ay):
                 obs[0, _row(ay), _col(ax)] = -1.0
-
-        bot = self._bot_by_agent.get(agent)
-        if bot is None:
-            return obs
 
         my_player = bot.owner
         my_bot_id = bot.id
